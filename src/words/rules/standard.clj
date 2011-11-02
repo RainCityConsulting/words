@@ -4,63 +4,67 @@
     [words.service :as service]
     [clojure.contrib.json :as json]))
 
+;;(defrecord Cell [attrs tile])
+;;(defrecord Play [type origin orientation word])
+;;(defprotocol Tile)
+
 (def char-tile-points
   [
-    {:value "a" :points 1}
-    {:value "b" :points 1}
-    {:value "c" :points 1}
-    {:value "d" :points 1}
-    {:value "e" :points 1}
-    {:value "f" :points 1}
-    {:value "g" :points 1}
-    {:value "h" :points 1}
-    {:value "i" :points 1}
-    {:value "j" :points 1}
-    {:value "k" :points 1}
-    {:value "l" :points 1}
-    {:value "m" :points 1}
-    {:value "n" :points 1}
-    {:value "o" :points 1}
-    {:value "p" :points 1}
-    {:value "q" :points 1}
-    {:value "r" :points 1}
-    {:value "s" :points 1}
-    {:value "t" :points 1}
-    {:value "u" :points 1}
-    {:value "v" :points 1}
-    {:value "w" :points 1}
-    {:value "x" :points 1}
-    {:value "y" :points 1}
-    {:value "z" :points 1}])
+    {:char "a" :points 1}
+    {:char "b" :points 1}
+    {:char "c" :points 1}
+    {:char "d" :points 1}
+    {:char "e" :points 1}
+    {:char "f" :points 1}
+    {:char "g" :points 1}
+    {:char "h" :points 1}
+    {:char "i" :points 1}
+    {:char "j" :points 1}
+    {:char "k" :points 1}
+    {:char "l" :points 1}
+    {:char "m" :points 1}
+    {:char "n" :points 1}
+    {:char "o" :points 1}
+    {:char "p" :points 1}
+    {:char "q" :points 1}
+    {:char "r" :points 1}
+    {:char "s" :points 1}
+    {:char "t" :points 1}
+    {:char "u" :points 1}
+    {:char "v" :points 1}
+    {:char "w" :points 1}
+    {:char "x" :points 1}
+    {:char "y" :points 1}
+    {:char "z" :points 1}])
 
 (def all-tiles
   [
-    {:type "c" :value "a" :count 5}
-    {:type "c" :value "b" :count 5}
-    {:type "c" :value "c" :count 5}
-    {:type "c" :value "d" :count 5}
-    {:type "c" :value "e" :count 5}
-    {:type "c" :value "f" :count 5}
-    {:type "c" :value "g" :count 5}
-    {:type "c" :value "h" :count 5}
-    {:type "c" :value "i" :count 5}
-    {:type "c" :value "j" :count 5}
-    {:type "c" :value "k" :count 5}
-    {:type "c" :value "l" :count 5}
-    {:type "c" :value "m" :count 5}
-    {:type "c" :value "n" :count 5}
-    {:type "c" :value "o" :count 5}
-    {:type "c" :value "p" :count 5}
-    {:type "c" :value "q" :count 5}
-    {:type "c" :value "r" :count 5}
-    {:type "c" :value "s" :count 5}
-    {:type "c" :value "t" :count 5}
-    {:type "c" :value "u" :count 5}
-    {:type "c" :value "v" :count 5}
-    {:type "c" :value "w" :count 5}
-    {:type "c" :value "x" :count 5}
-    {:type "c" :value "y" :count 5}
-    {:type "c" :value "z" :count 5}
+    {:type "c" :char "a" :count 5}
+    {:type "c" :char "b" :count 5}
+    {:type "c" :char "c" :count 5}
+    {:type "c" :char "d" :count 5}
+    {:type "c" :char "e" :count 5}
+    {:type "c" :char "f" :count 5}
+    {:type "c" :char "g" :count 5}
+    {:type "c" :char "h" :count 5}
+    {:type "c" :char "i" :count 5}
+    {:type "c" :char "j" :count 5}
+    {:type "c" :char "k" :count 5}
+    {:type "c" :char "l" :count 5}
+    {:type "c" :char "m" :count 5}
+    {:type "c" :char "n" :count 5}
+    {:type "c" :char "o" :count 5}
+    {:type "c" :char "p" :count 5}
+    {:type "c" :char "q" :count 5}
+    {:type "c" :char "r" :count 5}
+    {:type "c" :char "s" :count 5}
+    {:type "c" :char "t" :count 5}
+    {:type "c" :char "u" :count 5}
+    {:type "c" :char "v" :count 5}
+    {:type "c" :char "w" :count 5}
+    {:type "c" :char "x" :count 5}
+    {:type "c" :char "y" :count 5}
+    {:type "c" :char "z" :count 5}
     {:type "b" :count 2 :points 0}])
 
 (deftype StandardRules []
@@ -84,7 +88,7 @@
 
 (defn remove-tile [tiles t]
   (filter #(< 0 (:count %))
-    (map #(if (= (:value %) (:value t)) (assoc % :count (dec (:count %))) %) tiles)))
+    (map #(if (= (:char %) (:char t)) (assoc % :count (dec (:count %))) %) tiles)))
 
 (defn remove-tiles-for-play [play tiles]
   (if-let [word (:word play)]
@@ -124,7 +128,7 @@
     (= "b" (:type a) (:type b))
     (and
       (= "c" (:type a) (:type b))
-      (= (:value a) (:value b)))))
+      (= (:char a) (:char b)))))
 
 (defn random-tiles [n tiles]
   ((fn [n ts acc]
@@ -133,7 +137,7 @@
          (let [t (random-tile ts)]
            (recur (dec n) (remove-tile ts t) (conj acc t))))) n tiles []))
 
-;;;; Board
+;; Board
 ;; A board is a 2-d vector of sets
 ;; Each map can contain the following keys
 ;;
@@ -143,26 +147,32 @@
 ;; :triple-letter
 ;; :star
 ;;
-;; :play {:tile {:type :value :points} :player-id :tile-points :word-points}
+;; :play {:tile {:type :char :points} :player-id :tile-points :word-points}
 ;;
 
-(def double-word-positions [[1 5] [1 9]])
+(defmulti play-coords :orientation)
 
-(defn empty-board
-  [
-    [#{} #{} #{} #{:triple-word} #{} #{} #{:triple-letter} #{} #{:triple-letter} #{} #{} #{:triple-word} #{} #{} #{}]
-    [#{} #{} #{:double-letter} #{} #{} #{:double-word} #{} #{} #{} #{:double-word} #{} #{} #{:double-letter} #{} #{}]
-    [#{} #{:double-letter} #{} #{} #{:double-letter} #{} #{} #{} #{} #{} #{:double-letter} #{} #{} #{:double-letter} #{}]
-    [#{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{}]
-    [#{} #{} #{:double-letter} #{} #{} #{} #{:double-letter} #{} #{:double-letter} #{} #{} #{} #{:double-letter} #{} #{}]
-    [#{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{}]
-    [#{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{}]
-    [#{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{}]
-    [#{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{}]
-    [#{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{}]
-    [#{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{}]
-    [#{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{}]
-    [#{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{}]
-    [#{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{}]
-    [#{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{} #{}]
-  ])
+(defmethod play-coords :horizontal [play]
+  (map-indexed (fn [idx t] [(+ idx (first (:start play))) (second (:start play))]) (:word play)))
+
+(defmethod play-coords :vertical [play]
+  (map-indexed (fn [idx t] [(first (:start play)) (- (second (:start play)) idx)]) (:word play)))
+
+(defn is-star [[x y]]
+  (= 8 x y))
+
+(defn is-valid-play? [plays play]
+  (if (empty? plays)
+    (some is-star (play-coords play))
+    true))
+
+(defn empty-board []
+  (repeat 15 (repeat 15 {})))
+
+(defn fill-board [board plays]
+  (doseq [p plays]
+    (doseq [[t [x y]] (map list {:word p} (play-coords p))]
+      (println (str t " " x " " y))))
+      ;;(let [cell (transient (nth (nth board y) x))]
+        ;;(assoc! cell :tile {:type (:type p) :char (:char p)}))))
+  board)
