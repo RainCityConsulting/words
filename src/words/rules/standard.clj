@@ -153,10 +153,10 @@
 (defmulti play-coords :orientation)
 
 (defmethod play-coords :horizontal [play]
-  (map-indexed (fn [idx t] [(+ idx (first (:start play))) (second (:start play))]) (:word play)))
+  (map-indexed (fn [idx t] [(+ idx (first (:origin play))) (second (:origin play))]) (:word play)))
 
 (defmethod play-coords :vertical [play]
-  (map-indexed (fn [idx t] [(first (:start play)) (- (second (:start play)) idx)]) (:word play)))
+  (map-indexed (fn [idx t] [(first (:origin play)) (+ idx (second (:origin play)))]) (:word play)))
 
 (defn is-star [[x y]]
   (= 8 x y))
@@ -170,9 +170,20 @@
   (repeat 15 (repeat 15 {})))
 
 (defn fill-board [board plays]
-  (doseq [p plays]
-    (doseq [[t [x y]] (map list {:word p} (play-coords p))]
-      (println (str t " " x " " y))))
+  (loop [b board ps plays]
+    (if (empty? ps)
+      b
+      (loop [b2 b ts (:word (first ps))]
+        (when (seq ts)
+          (recur (assoc-in b2 [(second (:origin (first ts))) (first (:origin (first ts)))] {:type (:type (first ts)) :char (:char (first ts))}) (rest ts)))))))
+
+  ;;(doseq [p plays]
+    ;;(doseq [[t [x y]] (map list {:word p} (play-coords p))]
       ;;(let [cell (transient (nth (nth board y) x))]
-        ;;(assoc! cell :tile {:type (:type p) :char (:char p)}))))
-  board)
+        ;;(assoc! cell :tile {:type (:type p) :char (:char p)})
+        ;;(persistent! cell))))
+  ;;board)
+
+(defn update-cel [board x y cell]
+  (let [row (nth board y)]
+    ))
