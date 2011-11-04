@@ -138,7 +138,7 @@
            (recur (dec n) (remove-tile ts t) (conj acc t))))) n tiles []))
 
 ;; Board
-;; A board is a 2-d vector of sets
+;; A board is a 2-d vector of maps
 ;; Each map can contain the following keys
 ;;
 ;; :double-word
@@ -147,41 +147,92 @@
 ;; :triple-letter
 ;; :star
 ;;
-;; :play {:tile {:type :char :points} :player-id :tile-points :word-points}
+;; :tile {:type :char :points}
+;; :player-id
+;; :points
+;; :word-points
+;; :uses [{:player-id :points :word-points}]
 ;;
 
-(defmulti play-coords :orientation)
+(def special-cells
+  {:double-word [[1 5] [1 9] [3 7] [5 1] [5 13] [7 3] [7 11] [9 1] [9 13] [11 7] [13 5] [13 9]]
+   :triple-word [[0 3] [0 11] [3 0] [3 14] [11 0] [11 14] [14 3] [14 11]]
+   :double-letter [[1 2] [1 12]
+                   [2 1] [2 4] [2 10] [2 13]
+                   [4 2] [4 6] [4 8] [4 12]
+                   [6 4] [6 10]
+                   [8 4] [8 10]
+                   [10 2] [10 6] [10 8] [10 12]
+                   [12 1] [12 4] [12 10] [12 13]
+                   [13 2] [13 12]]
+   :triple-letter [[0 6] [0 8]
+                   [3 3] [3 11]
+                   [5 5] [5 9]
+                   [6 0] [6 14]
+                   [8 0] [8 14]
+                   [9 5] [9 9]
+                   [11 3] [11 11]
+                   [14 6] [14 8]]
+   :star [[7 7]]})
+
+(defn zip-special-cells []
+  (mapcat concat (map (fn [[k v]] (map #(conj (vector %) k) v)) (into [] special-cells))))
+
+(defmulti play-coords :orientation
+  "Returns a vector of the play's coordinates in [x y] form.")
 
 (defmethod play-coords :horizontal [play]
-  (map-indexed (fn [idx t] [(second (:origin play)) (+ idx (first (:origin play)))]) (:word play)))
+  (map-indexed (fn [idx t] [(+ idx (first (:origin play))) (second (:origin play))]) (:word play)))
 
 (defmethod play-coords :vertical [play]
-  (map-indexed (fn [idx t] [(+ idx (second (:origin play))) (first (:origin play))]) (:word play)))
+  (map-indexed (fn [idx t] [(first (:origin play)) (+ idx (second (:origin play)))]) (:word play)))
 
-(defn is-star [[x y]]
-  (= 8 x y))
+(defn empty-board
+  ([n] (empty-board n n))
+  ([rows cols] (->> (repeat cols {}) vec (repeat rows) vec)))
 
-(defn is-valid-play? [plays play]
-  (if (empty? plays)
-    (some is-star (play-coords play))
-    true))
-
-(defn empty-board []
-  (vec (repeat 15 (vec (repeat 15 {})))))
+(defn update-board-cell [board coords f & args]
+  (apply update-in board coords f args))
 
 (defn zip-play-coords [play]
   (map vector (play-coords play) (:word play)))
 
-(defn apply-play-tile [board play-tile]
-  (apply assoc-in board play-tile))
+(defn apply-play-tile [board coords tile]
+  (update-board-cell board coords assoc :tile tile))
 
 (defn apply-play [board play]
-  (reduce apply-play-tile board (zip-play-coords play)))
+  (letfn [(apt-intermediate [board [[x y] tile]]
+            (apply-play-tile board [y x] tile))]
+    (reduce apt-intermediate board (zip-play-coords play))))
 
-(defn fill-board [board plays]
-  (sort
-    #()
-    ((fn [ts [p & ps]]
-       (if (not p)
-         ts
-         (recur (concat ts ) ps))) [] plays)))
+(defn apply-special-cell [board coords k]
+  (update-board-cell board coords assoc k true))
+
+(defn apply-special-cells [board]
+  (letfn [(asc-intermediate [board [coords k]]
+            (apply-special-cell board coords k))]
+    (reduce asc-intermediate board (zip-special-cells))))
+
+(defn is-coord-in-bounds? [board coord]
+  (and
+    (>= (first coord) 0)
+    (>= (second coord) 0)
+    (< (first coord) (count (first board)))
+    (< (second coord) (count board))))
+
+(defn is-play-in-bounds? [board play]
+  (every? (partial is-coord-in-bounds board) (play-coords play)))
+
+(defn board-cell-contains? [board [x y] k]
+  (k (get-in board [y x])))
+
+(defn board-contains-any? [board k]
+  )
+
+(defn board-cell-contains-tile? [board [x y]]
+  (board-cell-contains? board [x y] :tile))
+
+(defn is-valid-play? [board play]
+  (if (has-tiles board)
+    ()
+    ()))
