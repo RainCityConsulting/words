@@ -2,7 +2,9 @@
   (:require
     [words.rules :as rules]
     [words.service :as service]
-    [clojure.contrib.json :as json]))
+    [clojure.set :as set]
+    [clojure.contrib.json :as json]
+    [clojure.contrib.math :as math]))
 
 ;;(defrecord Cell [attrs tile])
 ;;(defrecord Play [type origin orientation word])
@@ -117,18 +119,18 @@
 (defn random-tile [flat-tiles]
   (rand-nth flat-tiles))
 
-(defn remove-tile [flat-tiles t]
-  ((fn [ts acc]
-    (if (tiles-equal? (first ts) t)
-      (conj acc (rest ts))
-      (recur (rest ts) (conj acc (first ts))))) flat-tiles []))
-
 (defn tiles-equal? [a b]
   (or
     (= "b" (:type a) (:type b))
     (and
       (= "c" (:type a) (:type b))
       (= (:char a) (:char b)))))
+
+(defn remove-tile [flat-tiles t]
+  ((fn [ts acc]
+    (if (tiles-equal? (first ts) t)
+      (conj acc (rest ts))
+      (recur (rest ts) (conj acc (first ts))))) flat-tiles []))
 
 (defn random-tiles [n tiles]
   ((fn [n ts acc]
@@ -178,8 +180,7 @@
 (defn zip-special-cells []
   (mapcat concat (map (fn [[k v]] (map #(conj (vector %) k) v)) (into [] special-cells))))
 
-(defmulti play-coords :orientation
-  "Returns a vector of the play's coordinates in [x y] form.")
+(defmulti play-coords :orientation)
 
 (defmethod play-coords :horizontal [play]
   (map-indexed (fn [idx t] [(+ idx (first (:origin play))) (second (:origin play))]) (:word play)))
@@ -221,18 +222,54 @@
     (< (second coord) (count board))))
 
 (defn is-play-in-bounds? [board play]
-  (every? (partial is-coord-in-bounds board) (play-coords play)))
+  (every? (partial is-coord-in-bounds? board) (play-coords play)))
 
-(defn board-cell-contains? [board [x y] k]
+(defn board-cell-contains? [board k [x y]]
   (k (get-in board [y x])))
 
+(defn all-board-cells [board]
+  (reduce concat [] board))
+
+(defn all-board-coords [board]
+  (sort (for [x (range (count board)) y (range (count (first board)))] [x y])))
+
 (defn board-contains-any? [board k]
-  )
+  (some (partial board-cell-contains? board k) (all-board-coords board)))
 
-(defn board-cell-contains-tile? [board [x y]]
-  (board-cell-contains? board [x y] :tile))
+(defn is-adjacent? [[x1 y1] [x2 y2]]
+  (or
+    (and (= x1 x2) (= 1 (math/abs (- y1 y2))))
+    (and (= y1 y2) (= 1 (math/abs (- x1 x2))))))
 
-(defn is-valid-play? [board play]
-  (if (has-tiles board)
-    ()
-    ()))
+(defn all-board-coords-containing [board k]
+  (filter (partial board-cell-contains? board k) (all-board-coords board)))
+
+(defn do-coords-overlap? [coords1 coords2]
+  (seq (set/intersection (set coords1) (set coords2))))
+
+(defn adjacent-coords [coords1 coords2]
+  (seq (for [c1 coords1 c2 coords2 :when (is-adjacent? c1 c2)] [c1 c2])))
+
+(defn is-origin-of-word? [board [x y]]
+  (and
+    (board-cell-contains? board :tile [x y])
+    (or (= 0 x) (not (board-cell-contains? board :tile [(dec x) y])))
+    (or (= 0 y) (not (board-cell-contains? board :tile [x (dec y)])))))
+
+(defn h-word [board coords]
+  (loop [x (first coords) word []]
+    (if-let [tile (board-cell-contains? board :tile [x (second coords)])]
+      (recur (inc x) (conj word tile))
+      word)))
+
+(defn v-word [board coords]
+  (loop [y (second coords) word []]
+    (if-let [tile (board-cell-contains? board :tile [(first coords) y])]
+      (recur (inc y) (conj word tile))
+      word)))
+
+(defn all-words [board]
+  (filter #(> (count %) 1)
+          (reduce concat []
+                  (map (juxt (partial h-word board) (partial v-word board))
+                       (filter (partial is-origin-of-word? board) (all-board-coords board))))))
