@@ -252,9 +252,18 @@
 
 (defn is-origin-of-word? [board [x y]]
   (and
-    (board-cell-contains? board :tile [x y])
-    (or (= 0 x) (not (board-cell-contains? board :tile [(dec x) y])))
-    (or (= 0 y) (not (board-cell-contains? board :tile [x (dec y)])))))
+   (board-cell-contains? board :tile [x y])
+   (or
+    (and
+     (or
+      (= 0 y)
+      (not (board-cell-contains? board :tile [x (dec y)])))
+     (board-cell-contains? board :tile [x (inc y)]))
+    (and
+     (or
+      (= 0 x)
+      (not (board-cell-contains? board :tile [(dec x) y])))
+     (board-cell-contains? board :tile [(inc x) y])))))
 
 (defn h-word [board coords]
   (loop [x (first coords) word []]
@@ -273,3 +282,12 @@
           (reduce concat []
                   (map (juxt (partial h-word board) (partial v-word board))
                        (filter (partial is-origin-of-word? board) (all-board-coords board))))))
+
+(defn is-valid-play? [board play]
+  (and
+   (if-not (board-contains-any? board :tile)
+     (some (partial board-cell-contains? :star) (play-coords play))
+     false)
+   (is-play-in-bounds? board play)
+   (not (do-coords-overlap? (all-board-coords-containing board :tile) (play-coords play)))
+   (adjacent-coords (all-board-coords-containing board :tile) (play-coords play))))
