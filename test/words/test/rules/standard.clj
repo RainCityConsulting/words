@@ -63,11 +63,22 @@
   (is (board-cell-contains? (apply-play board play-1) :tile [2 0]))
   (is (= 1 (count (all-words (apply-play board play-1)))))
   (is (= "cat" (reduce #(str %1 (:char %2)) "" (first (all-words (apply-play board play-1))))))
-  (is (board-cell-contains? (apply-play (apply-play board play-1) play-2) :tile [1 1]))
-  (is (board-cell-contains? (apply-play (apply-play board play-1) play-2) :tile [2 1]))
-  (is (board-cell-contains? (apply-play (apply-play board play-1) play-2) :tile [3 1]))
-  (is (is-origin-of-word? (apply-play (apply-play board play-1) play-2) [0 0]))
-  (is (is-origin-of-word? (apply-play (apply-play board play-1) play-2) [1 0]))
-  (is (is-origin-of-word? (apply-play (apply-play board play-1) play-2) [2 0]))
-  (is (is-origin-of-word? (apply-play (apply-play board play-1) play-2) [1 1]))
-  (is (= 4 (all-words (apply-play (apply-play board play-1) play-2)))))
+  (is (board-cell-contains? (-> board (apply-play play-1) (apply-play play-2)) :tile [1 1]))
+  (is (board-cell-contains? (-> board (apply-play play-1) (apply-play play-2)) :tile [2 1]))
+  (is (board-cell-contains? (-> board (apply-play play-1) (apply-play play-2)) :tile [3 1]))
+  (is (= 4 (count (all-words (-> board (apply-play play-1) (apply-play play-2)))))))
+
+(deftest play-validity
+  (is (not (is-valid-play?
+	    (-> board (apply-play play-1) (apply-play play-2))
+	    {:origin [10 0], :orientation :horizontal, :word [{:type :char, :char "a"}]})))
+  (is (not (is-valid-play?
+	    (-> board (apply-play play-1) (apply-play play-2))
+	    {:origin [1 1], :orientation :vertical, :word [{:type :char, :char "a"}]})))
+  (is (is-valid-play?
+	    (-> board (apply-play play-1) (apply-play play-2))
+	    {:origin [2 2], :orientation :horizontal, :word [{:type :char, :char "a"} {:type :char, :char "b"}]})))
+
+(deftest points
+  (is (= 6 (play-points board play-1)))
+  (is (= 16 (play-points (apply-play board play-1) play-2))))

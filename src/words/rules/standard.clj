@@ -11,63 +11,68 @@
 ;;(defprotocol Tile)
 
 (def char-tile-points
-  [
-    {:char "a" :points 1}
-    {:char "b" :points 1}
-    {:char "c" :points 1}
-    {:char "d" :points 1}
-    {:char "e" :points 1}
-    {:char "f" :points 1}
-    {:char "g" :points 1}
-    {:char "h" :points 1}
-    {:char "i" :points 1}
-    {:char "j" :points 1}
-    {:char "k" :points 1}
-    {:char "l" :points 1}
-    {:char "m" :points 1}
-    {:char "n" :points 1}
-    {:char "o" :points 1}
-    {:char "p" :points 1}
-    {:char "q" :points 1}
-    {:char "r" :points 1}
-    {:char "s" :points 1}
-    {:char "t" :points 1}
-    {:char "u" :points 1}
-    {:char "v" :points 1}
-    {:char "w" :points 1}
-    {:char "x" :points 1}
-    {:char "y" :points 1}
-    {:char "z" :points 1}])
+     {
+      "a" 1,
+      "b" 4,
+      "c" 4,
+      "d" 2,
+      "e" 1,
+      "f" 4,
+      "g" 3,
+      "h" 4,
+      "i" 1,
+      "j" 10,
+      "k" 5,
+      "l" 1,
+      "m" 4,
+      "n" 2,
+      "o" 1,
+      "p" 4,
+      "q" 10,
+      "r" 1,
+      "s" 1,
+      "t" 1,
+      "u" 2,
+      "v" 5,
+      "w" 4,
+      "x" 8,
+      "y" 3,
+      "z" 10})
 
 (def all-tiles
   [
-    {:type "c" :char "a" :count 5}
-    {:type "c" :char "b" :count 5}
-    {:type "c" :char "c" :count 5}
-    {:type "c" :char "d" :count 5}
-    {:type "c" :char "e" :count 5}
-    {:type "c" :char "f" :count 5}
-    {:type "c" :char "g" :count 5}
-    {:type "c" :char "h" :count 5}
-    {:type "c" :char "i" :count 5}
-    {:type "c" :char "j" :count 5}
-    {:type "c" :char "k" :count 5}
-    {:type "c" :char "l" :count 5}
-    {:type "c" :char "m" :count 5}
-    {:type "c" :char "n" :count 5}
-    {:type "c" :char "o" :count 5}
-    {:type "c" :char "p" :count 5}
-    {:type "c" :char "q" :count 5}
-    {:type "c" :char "r" :count 5}
-    {:type "c" :char "s" :count 5}
-    {:type "c" :char "t" :count 5}
-    {:type "c" :char "u" :count 5}
-    {:type "c" :char "v" :count 5}
-    {:type "c" :char "w" :count 5}
-    {:type "c" :char "x" :count 5}
-    {:type "c" :char "y" :count 5}
-    {:type "c" :char "z" :count 5}
-    {:type "b" :count 2 :points 0}])
+    {:type :char :char "a" :count 5}
+    {:type :char :char "b" :count 5}
+    {:type :char :char "c" :count 5}
+    {:type :char :char "d" :count 5}
+    {:type :char :char "e" :count 5}
+    {:type :char :char "f" :count 5}
+    {:type :char :char "g" :count 5}
+    {:type :char :char "h" :count 5}
+    {:type :char :char "i" :count 5}
+    {:type :char :char "j" :count 5}
+    {:type :char :char "k" :count 5}
+    {:type :char :char "l" :count 5}
+    {:type :char :char "m" :count 5}
+    {:type :char :char "n" :count 5}
+    {:type :char :char "o" :count 5}
+    {:type :char :char "p" :count 5}
+    {:type :char :char "q" :count 5}
+    {:type :char :char "r" :count 5}
+    {:type :char :char "s" :count 5}
+    {:type :char :char "t" :count 5}
+    {:type :char :char "u" :count 5}
+    {:type :char :char "v" :count 5}
+    {:type :char :char "w" :count 5}
+    {:type :char :char "x" :count 5}
+    {:type :char :char "y" :count 5}
+    {:type :char :char "z" :count 5}
+    {:type "b" :count 2}])
+
+(defn tile-value [tile]
+  (if (= :char (:type tile))
+    (get char-tile-points (:char tile))
+    0))
 
 (deftype StandardRules []
   rules/Rules
@@ -123,7 +128,7 @@
   (or
     (= "b" (:type a) (:type b))
     (and
-      (= "c" (:type a) (:type b))
+      (= :char (:type a) (:type b))
       (= (:char a) (:char b)))))
 
 (defn remove-tile [flat-tiles t]
@@ -198,13 +203,81 @@
 (defn zip-play-coords [play]
   (map vector (play-coords play) (:word play)))
 
-(defn apply-play-tile [board coords tile]
-  (update-board-cell board coords assoc :tile tile))
+(defn board-cell-contains? [board k [x y]]
+  (k (get-in board [y x])))
+
+;; TODO Rename this or hide it in a letfn or something like that.
+(defn calc-tile-points [board [x y] points]
+  (cond
+   (board-cell-contains? board :double-letter [x y]) (* 2 points)
+   (board-cell-contains? board :triple-letter [x y]) (* 3 points)
+   :default points))
+
+(defn tile-points [board {:keys [coords] :as tile}]
+  (let [points (tile-value tile)]
+    (if (board-cell-contains? board :tile coords)
+      points
+      (calc-tile-points board coords points))))
+
+;; TODO Rename this or hide it in a letfn or something like that.
+(defn word-points-adjust [board [x y] points]
+  (cond
+   (board-cell-contains? board :tile [x y]) points
+   (board-cell-contains? board :double-word [x y]) (* 2 points)
+   (board-cell-contains? board :triple-word [x y]) (* 3 points)
+   :default points))
+
+(defn word-points
+  "Calculates total points for the given word played on the given board.
+  word is a sequence of maps of :coords :tile. The board is a representation
+  of the board before the word is played."
+  [board word]
+  (reduce #(word-points-adjust board (:coords %2) %1)
+	  (reduce #(+ %1 (tile-points board %2)) 0 word)
+	  word))
+
+(defn h-word [board [x y :as coords]]
+  (if (and
+       (board-cell-contains? board :tile coords)
+       (or (= 0 x) (not (board-cell-contains? board :tile [(dec x) y])))
+       (board-cell-contains? board :tile [(inc x) y]))
+    (loop [x1 x word []]
+      (if-let [tile (board-cell-contains? board :tile [x1 y])]
+        (recur (inc x1) (conj word (merge tile {:coords [x1 y]})))
+        word))
+    []))
+
+(defn v-word [board [x y :as coords]]
+  (if (and
+       (board-cell-contains? board :tile coords)
+       (or (= 0 y) (not (board-cell-contains? board :tile [x (dec y)])))
+       (board-cell-contains? board :tile [x (inc y)]))
+    (loop [y1 y word []]
+      (if-let [tile (board-cell-contains? board :tile [x y1])]
+        (recur (inc y1) (conj word (merge tile {:coords [x y1]})))
+        word))
+    []))
+
+(defn all-board-coords [board]
+  (sort (for [x (range (count board)) y (range (count (first board)))] [x y])))
+
+(defn all-words [board]
+  (filter seq
+          (reduce concat []
+		  (map (juxt (partial h-word board) (partial v-word board))
+		       (all-board-coords board)))))
+
+(defn apply-play-tile [board coords tile tile-value tile-points]
+  (update-board-cell board coords assoc :tile tile :tile-value tile-value :tile-points tile-points))
 
 (defn apply-play [board play]
   (letfn [(apt-intermediate [board [[x y] tile]]
-            (apply-play-tile board [y x] tile))]
+            (apply-play-tile board [y x] tile (tile-value tile) (tile-points board (assoc tile :coords [x y]))))]
     (reduce apt-intermediate board (zip-play-coords play))))
+
+(defn play-points [board play]
+  (reduce #(+ %1 (word-points board %2)) 0
+	  (set/difference (set (all-words (apply-play board play))) (set (all-words board)))))
 
 (defn apply-special-cell [board coords k]
   (update-board-cell board coords assoc k true))
@@ -224,14 +297,8 @@
 (defn is-play-in-bounds? [board play]
   (every? (partial is-coord-in-bounds? board) (play-coords play)))
 
-(defn board-cell-contains? [board k [x y]]
-  (k (get-in board [y x])))
-
 (defn all-board-cells [board]
   (reduce concat [] board))
-
-(defn all-board-coords [board]
-  (sort (for [x (range (count board)) y (range (count (first board)))] [x y])))
 
 (defn board-contains-any? [board k]
   (some (partial board-cell-contains? board k) (all-board-coords board)))
@@ -250,44 +317,8 @@
 (defn adjacent-coords [coords1 coords2]
   (seq (for [c1 coords1 c2 coords2 :when (is-adjacent? c1 c2)] [c1 c2])))
 
-(defn is-origin-of-word? [board [x y]]
-  (and
-   (board-cell-contains? board :tile [x y])
-   (or
-    (and
-     (or
-      (= 0 y)
-      (not (board-cell-contains? board :tile [x (dec y)])))
-     (board-cell-contains? board :tile [x (inc y)]))
-    (and
-     (or
-      (= 0 x)
-      (not (board-cell-contains? board :tile [(dec x) y])))
-     (board-cell-contains? board :tile [(inc x) y])))))
-
-(defn h-word [board coords]
-  (loop [x (first coords) word []]
-    (if-let [tile (board-cell-contains? board :tile [x (second coords)])]
-      (recur (inc x) (conj word tile))
-      word)))
-
-(defn v-word [board coords]
-  (loop [y (second coords) word []]
-    (if-let [tile (board-cell-contains? board :tile [(first coords) y])]
-      (recur (inc y) (conj word tile))
-      word)))
-
-(defn all-words [board]
-  (filter #(> (count %) 1)
-          (reduce concat []
-                  (map (juxt (partial h-word board) (partial v-word board))
-                       (filter (partial is-origin-of-word? board) (all-board-coords board))))))
-
 (defn is-valid-play? [board play]
   (and
-   (if-not (board-contains-any? board :tile)
-     (some (partial board-cell-contains? :star) (play-coords play))
-     false)
    (is-play-in-bounds? board play)
    (not (do-coords-overlap? (all-board-coords-containing board :tile) (play-coords play)))
    (adjacent-coords (all-board-coords-containing board :tile) (play-coords play))))

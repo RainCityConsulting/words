@@ -3,8 +3,8 @@ Standard Rules
 # (BOARD) CELL
 A board is a 2-d vector of maps. Each set may contain one or more of
 * attrs #{:double-letter, etc.}
-* tile {:type :char :tile-value :tile-points :player-id :word-points}
-* uses [{:player-id :tile-points :word-points}]
+* tile {:type :char :tile-value :tile-points :player-id :word-points :play-points}
+* uses [{:player-id :tile-points :word-points :play-points}]
 
 # PLAY
 These get persisted

@@ -10,6 +10,5 @@
                  [commons-lang "2.3"]
                  [congomongo "0.1.7"]]
   :dev-dependencies [
-                     [lein-ring "0.4.5"]
-                     [swank-clojure "1.2.1"]]
+                     [lein-ring "0.4.5"]]
   :ring {:handler words.rest/app})
